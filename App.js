@@ -5,14 +5,16 @@ import * as banco from './sql/banco';
 import { View, ActivityIndicator } from 'react-native'; 
 
 import HomeScreen from './screens/home';
-import ProdutosScreen from './screens/products';
-import ClientesScreen from './screens/clientes';
+import ProdutosScreen from './screens/products/products';
+import ClientesScreen from './screens/clientes/clientes';
 import RelatoriosScreen from './screens/relatorios';
 import VendasScreen from './screens/vendas';
 import Config from './screens/config';
-import AddProduct from './screens/modal_add_product';
-import EditProduct from './screens/modal_edit_product';
-import View_Products from './screens/product_view';
+import AddProduct from './screens/products/modal_add_product';
+import EditProduct from './screens/products/modal_edit_product';
+import View_Products from './screens/products/product_view';
+
+import AddCliente from './screens/clientes/modal_add_cliente';
 
 const Stack = createStackNavigator();
 
@@ -57,6 +59,8 @@ export default function App() {
           <Stack.Screen name="Novo Produto" component={AddProduct} options={{ headerShown: false }} />
           <Stack.Screen name="Editar Produto" component={EditProduct} options={{ headerShown: false }} />
           <Stack.Screen name="Ver Produto" component={View_Products} options={{ headerShown: false }} />
+
+          <Stack.Screen name="Novo Cliente" component={AddCliente} options={{ headerShown: false }} />
         </Stack.Group>
       </Stack.Navigator>
     </NavigationContainer>

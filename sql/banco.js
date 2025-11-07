@@ -19,6 +19,14 @@ export const createTable = async () => {
         quantidade_estoque INTEGER default 0,
         descricao TEXT
       );
+
+      CREATE TABLE IF NOT EXISTS clientes (
+        id_cliente INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome varchar(200),
+        telefone varchar(11),
+        data_nascimento date,
+        foto TEXT default 'sem_foto.jpg'
+      )
     `);
 
     console.log('Tabela criada com sucesso!');
@@ -125,3 +133,79 @@ export const deletedProduct = async (id_produto) => {
 
 //Inserções na tabela clientes 
 //============================
+
+export const insertCliente = async (nome, telefone, data_nascimento, foto) => {
+  try {
+    const db = await openDB();
+    const result = await db.runAsync(
+      'INSERT INTO clientes (nome, telefone, data_nascimento, foto) VALUES (?, ?, ?, ?)',
+      nome,
+      telefone,
+      data_nascimento,
+      foto
+    );
+  } catch (error) {
+    console.error('Erro ao inserir cliente:', error.message);
+  }
+};
+
+export const getClientes = async () => {
+  try {
+    const db = await openDB();
+    const rows = await db.getAllAsync('SELECT * FROM clientes');
+    return rows;
+  } catch (error) {
+    console.error('Erro ao listar clientes:', error.message);
+    return [];
+  }
+};
+
+export const getOneCliente = async (id_cliente) => {
+  try{
+    const db = await openDB();
+    const row = await db.getAllAsync(
+      'SELECT * FROM clientes WHERE id_cliente = ?',
+      id_cliente);
+      console.log(row)
+      return row;
+  } catch (error) {
+    console.log('Erro ao procurar cliente', error.message);
+    return [];
+  }
+};
+
+export const updateCliente = async (nome, telefone, data_nascimento, foto, id_cliente) => {
+  try {
+    const db = await openDB();
+    await db.runAsync(
+      `UPDATE products
+      SET
+        nome = ?,
+        telefone = ?,
+        data_nascimento = ?,
+        foto = ?,
+      WHERE id_cliente = ?`,
+      [nome, telefone, data_nascimento, foto, id_cliente]
+    );
+    console.log(`Cliente ${id_cliente} atualizado com sucesso!`);
+    return true;
+  } catch (error) {
+    console.log('Erro ao atualizar cliente:', error.message);
+    return false;
+  }
+};
+
+export const deletedCliente = async (id_cliente) => {
+  try {
+    const db = await openDB();
+    await db.runAsync(
+      'DELETE FROM clientes WHERE id_cliente = ?',
+      [id_cliente]
+    );
+    console.log(`Cliente ${id_cliente} deletado com sucesso`);
+    return true;
+  } catch (error) {
+    console.log('Erro ao deletar cliente:', error.message);
+    return false;
+  }
+};
