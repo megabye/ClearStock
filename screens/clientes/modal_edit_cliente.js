@@ -1,63 +1,61 @@
 import React, { useState } from 'react';
-import { View, Text, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, Alert, ActivityIndicator, StyleSheet, ScrollView } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
-import { Divider } from '@rneui/themed';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
-import styles from '../../components/css';
 import { ButtonWI } from '../../components/button_w_i';
 import { AnimatedTextField } from '../../components/field';
 import * as banco from '../../sql/banco';
 
-// Função auxiliar para formatar o valor do preço
-const formatCurrency = (value) => {
+// Funções Auxiliares
+function formatTelefone(value) {
   if (!value) return '';
-  const numericValue = String(value).replace(/\D/g, '');
-  if (!numericValue) return '';
-  const floatValue = parseFloat(numericValue) / 100;
-  return floatValue.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  });
-};
+  const cleaned = value.replace(/\D/g, '');
+  if (cleaned.length <= 10) return cleaned.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').trim();
+  return cleaned.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').trim();
+}
 
-export default function EditProduct({ navigation }) {
+function formatData(value) {
+  if (!value) return '';
+  const cleaned = value.replace(/\D/g, '');
+  if (cleaned.length <= 2) return cleaned;
+  if (cleaned.length <= 4) return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
+  return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/${cleaned.slice(4, 8)}`;
+}
+
+function convertDataParaSQL(data) {
+  const partes = data.split('/');
+  if (partes.length === 3) return `${partes[2]}-${partes[1]}-${partes[0]}`;
+  return data;
+}
+
+function convertDataParaDisplay(data) {
+  if (!data) return '';
+  const partes = data.split('-');
+  if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  return data;
+}
+
+export default function EditCliente({ navigation }) {
   const route = useRoute();
-  const id_from_product = route.params?.productId;
-
-  const [product, setProduct] = useState(null);
+  const id_from_cliente = route.params?.clienteId;
   const [loading, setLoading] = useState(true);
 
-  // Schema de validação
   const schema = yup.object({
-    nome_produto: yup.string().required('O nome não pode ser vazio'),
-    preco: yup.string().required('O preço é obrigatório'),
-    quantidade: yup
-      .string()
-      .matches(/^[0-9]+$/, 'Digite apenas números')
-      .required('A quantidade é obrigatória'),
-    descricao: yup.string().nullable(),
+    nome: yup.string().required('O nome não pode ser vazio'),
+    telefone: yup.string().matches(/^\(\d{2}\) \d{4,5}-\d{4}$/, 'Telefone inválido').required('Obrigatório'),
+    data_nascimento: yup.string().matches(/^\d{2}\/\d{2}\/\d{4}$/, 'DD/MM/AAAA').required('Obrigatório'),
   });
 
-  // Formulário com react-hook-form
-  const {
-    handleSubmit,
-    control,
-    reset,
-    formState: { errors },
-  } = useForm({
+  const { handleSubmit, control, reset, formState: { errors } } = useForm({
     resolver: yupResolver(schema),
-    defaultValues: {
-      nome_produto: '',
-      preco: '',
-      quantidade: '',
-      descricao: '',
-    },
+    defaultValues: { nome: '', telefone: '', data_nascimento: '' },
   });
 
-  // Carrega dados do produto quando a tela é focada
   useFocusEffect(
     React.useCallback(() => {
       loadData();
@@ -67,21 +65,17 @@ export default function EditProduct({ navigation }) {
   const loadData = async () => {
     setLoading(true);
     try {
-      const allProduct = await banco.getOneProduct(id_from_product);
-      if (allProduct.length > 0) {
-        const p = allProduct[0];
-        setProduct(p);
-
-        // Preenche o formulário com os dados existentes
+      const data = await banco.getOneCliente(id_from_cliente);
+      if (data.length > 0) {
+        const c = data[0];
         reset({
-          nome_produto: p.nome_produto,
-          preco: String(p.preco_atual * 100),
-          quantidade: String(p.quantidade_estoque),
-          descricao: p.descricao,
+          nome: c.nome,
+          telefone: formatTelefone(c.telefone),
+          data_nascimento: convertDataParaDisplay(c.data_nascimento),
         });
       }
     } catch (error) {
-      console.error('Erro ao carregar produto:', error);
+      console.error('Erro ao carregar cliente:', error);
     } finally {
       setLoading(false);
     }
@@ -89,22 +83,24 @@ export default function EditProduct({ navigation }) {
 
   const onSubmit = async (data) => {
     try {
-      const precoNumerico = parseFloat(data.preco) / 100;
-      const sucesso = await banco.updateProduct(
-        data.nome_produto,
-        'er', // placeholder para imagem
-        precoNumerico.toFixed(2),
-        parseInt(data.quantidade),
-        data.descricao,
-        id_from_product
+      const dataSQL = convertDataParaSQL(data.data_nascimento);
+      // Mantendo a consistência: se no AddCliente você salvou com máscara, aqui também deve.
+      // Se quiser salvar LIMPO (só números), use .replace(/\D/g, '') no data.telefone
+      
+      const sucesso = await banco.updateCliente(
+        data.nome,
+        data.telefone, 
+        dataSQL,
+        'sem_foto.jpg', 
+        id_from_cliente
       );
 
       if (sucesso) {
-        Alert.alert('Sucesso!', 'Produto editado com sucesso.', [
-          { text: 'OK', onPress: () => navigation.goBack() },
-        ]);
+        Alert.alert('Sucesso!', 'Cliente atualizado com sucesso.', 
+            [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
       } else {
-        Alert.alert('Erro', 'Não foi possível atualizar o produto.');
+        Alert.alert('Erro', 'Não foi possível atualizar o cliente.');
       }
     } catch (error) {
       Alert.alert('Erro inesperado', error.message);
@@ -113,85 +109,116 @@ export default function EditProduct({ navigation }) {
 
   if (loading) {
     return (
-      <View style={[styles.container_home, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#000" />
-        <Text style={{ marginTop: 10 }}>Carregando produto...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#1976d2" />
+        <Text style={{ marginTop: 10, color: '#666' }}>Carregando dados...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container_home}>
-      <Text style={styles.appTitle}>Editar Produto</Text>
-      <Divider />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f7fa' }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+        
+        <View style={{ marginBottom: 20 }}>
+          <Text style={localStyles.headerTitle}>Editar Cliente</Text>
+          <Text style={localStyles.headerSubtitle}>Atualize os dados cadastrais</Text>
+        </View>
 
-      <Controller
-        control={control}
-        name="nome_produto"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <AnimatedTextField
-            label="Nome do Produto"
-            error={errors.nome_produto}
-            keyboardType="default"
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
-          />
-        )}
-      />
+        <View style={localStyles.card}>
+            <View style={localStyles.cardHeader}>
+                <Feather name="edit-2" size={18} color="#1976d2" />
+                <Text style={localStyles.cardTitle}>DADOS DO CADASTRO</Text>
+            </View>
 
-      <Controller
-        control={control}
-        name="preco"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <AnimatedTextField
-            label="Preço Atual"
-            error={errors.preco}
-            keyboardType="numeric"
-            onBlur={onBlur}
-            value={formatCurrency(value)}
-            onChangeText={(text) => {
-              const numericValue = text.replace(/\D/g, '');
-              onChange(numericValue);
-            }}
-          />
-        )}
-      />
+            <View style={localStyles.inputContainer}>
+                <Controller
+                    control={control}
+                    name="nome"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                    <AnimatedTextField
+                        label="Nome Completo"
+                        error={errors.nome}
+                        keyboardType="default"
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                    />
+                    )}
+                />
+            </View>
 
-      <Controller
-        control={control}
-        name="quantidade"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <AnimatedTextField
-            label="Quantidade em Estoque"
-            error={errors.quantidade}
-            keyboardType="numeric"
-            onBlur={onBlur}
-            value={value}
-            onChangeText={(text) => {
-              const numericValue = text.replace(/\D/g, '');
-              onChange(numericValue);
-            }}
-          />
-        )}
-      />
+            <View style={localStyles.inputContainer}>
+                <Controller
+                    control={control}
+                    name="telefone"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                    <AnimatedTextField
+                        label="Telefone"
+                        error={errors.telefone}
+                        keyboardType="numeric"
+                        onBlur={onBlur}
+                        value={formatTelefone(value)}
+                        onChangeText={(text) => onChange(formatTelefone(text))}
+                    />
+                    )}
+                />
+            </View>
 
-      <Controller
-        control={control}
-        name="descricao"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <AnimatedTextField
-            label="Descrição do Produto"
-            error={errors.descricao}
-            keyboardType="default"
-            onBlur={onBlur}
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
-      />
+            <View style={localStyles.inputContainer}>
+                <Controller
+                    control={control}
+                    name="data_nascimento"
+                    render={({ field: { onChange, onBlur, value } }) => (
+                    <AnimatedTextField
+                        label="Data de Nascimento"
+                        error={errors.data_nascimento}
+                        keyboardType="numeric"
+                        onBlur={onBlur}
+                        value={formatData(value)}
+                        onChangeText={(text) => onChange(formatData(text))}
+                    />
+                    )}
+                />
+            </View>
+        </View>
 
-      <ButtonWI title="Editar Produto" iconName="plus" onPress={handleSubmit(onSubmit)} />
-    </View>
+        <ButtonWI title="Salvar Alterações" iconName="check" onPress={handleSubmit(onSubmit)} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+// Estilos consistentes com o AddCliente
+const localStyles = StyleSheet.create({
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#1976d2' },
+  headerSubtitle: { fontSize: 16, color: '#777', marginTop: 4 },
+  
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    paddingBottom: 8,
+  },
+  cardTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginLeft: 8,
+    letterSpacing: 1,
+  },
+  inputContainer: { marginBottom: 12 }
+});

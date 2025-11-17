@@ -79,6 +79,7 @@ export default function ProdutosScreen({ navigation }) {
         visible={visible}
         icon={{ name: 'add', color: 'white' }}
         style={styles.fab} 
+        color='#007bff'
         onPress={() => navigation.navigate('Novo Produto')}
       />
     </View>
@@ -96,7 +97,8 @@ const localStyles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
     margin: 5,
-    borderRadius: 5,
+    borderRadius: 10,
+    marginHorizontal: 10
   },
   list: {
     flex: 1,

@@ -1,14 +1,13 @@
-import React, { useState } from 'react'; 
-import { View, Text, Alert, StyleSheet } from 'react-native';
+import React from 'react'; 
+import { View, Text, Alert, StyleSheet, ScrollView } from 'react-native';
 import { useForm, Controller } from 'react-hook-form'; 
-import { Divider } from '@rneui/themed';
-//import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import styles from '../../components/css';
+import { Feather } from '@expo/vector-icons';
+
 import { ButtonWI } from '../../components/button_w_i';
 import { AnimatedTextField } from '../../components/field';
-
 import * as banco from '../../sql/banco';
 
 const formatCurrency = (value) => {
@@ -23,42 +22,6 @@ const formatCurrency = (value) => {
 };
 
 export default function AddProduct({ navigation }) {
-  //const [image, setImage] = useState(null);
-
-  /*const pickImageFromGallery = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permissão negada', 'É necessário permitir o acesso à galeria.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
-  };
-
-  const takePhotoWithCamera = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permissão negada', 'É necessário permitir o acesso à câmera.');
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaType.Images,
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
-    }
-  };*/
-
   const schema = yup.object({
     nome_produto: yup.string().required('O nome não pode ser vazio'),
     preco: yup.string().required('O preço é obrigatório'),
@@ -77,12 +40,11 @@ export default function AddProduct({ navigation }) {
   });
 
   const onSubmit = (data) => {
-    const precoNumerico = parseFloat(data.preco) / 100;
-    //const imgPath = image ? image : '../images/sem_imagem.jpg';
+    const precoNumerico = parseFloat(data.preco.replace(/\D/g, '')) / 100;
 
     banco.insertProduct(
       data.nome_produto,
-      imgPath,
+      'sem_imagem.jpg',
       precoNumerico.toFixed(2),
       parseInt(data.quantidade),
       data.descricao
@@ -104,98 +66,146 @@ export default function AddProduct({ navigation }) {
   };
 
   return (
-    <View style={styles.container_home}>
-      <Text style={styles.appTitle}>Adicionar Produto</Text>
-      <Divider />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f7fa' }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+        
+        <View style={{ marginBottom: 20 }}>
+          <Text style={localStyles.headerTitle}>Novo Produto</Text>
+          <Text style={localStyles.headerSubtitle}>Cadastre um item no estoque</Text>
+        </View>
 
-      <Controller
-        control={control}
-        name="nome_produto"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <AnimatedTextField
-            label="Nome do Produto"
-            error={errors.nome_produto}
-            keyboardType="default"
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
-          />
-        )}
-      />
+        {/* CARTÃO 1: INFORMAÇÕES BÁSICAS */}
+        <View style={localStyles.card}>
+          <View style={localStyles.cardHeader}>
+            <Feather name="package" size={18} color="#1976d2" />
+            <Text style={localStyles.cardTitle}>INFORMAÇÕES BÁSICAS</Text>
+          </View>
 
-      <Controller
-        control={control}
-        name="preco"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <AnimatedTextField
-            label="Preço Atual"
-            error={errors.preco}
-            keyboardType="numeric"
-            onBlur={onBlur}
-            value={formatCurrency(value)}
-            onChangeText={(text) => {
-              const numericValue = text.replace(/\D/g, '');
-              onChange(numericValue);
-            }}
-          />
-        )}
-      />
+          <View style={localStyles.inputContainer}>
+            <Controller
+              control={control}
+              name="nome_produto"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <AnimatedTextField
+                  label="Nome do Produto"
+                  error={errors.nome_produto}
+                  keyboardType="default"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
+            />
+          </View>
 
-      <Controller
-        control={control}
-        name="quantidade"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <AnimatedTextField
-            label="Quantidade em Estoque"
-            error={errors.quantidade}
-            keyboardType="numeric"
-            onBlur={onBlur}
-            value={value}
-            onChangeText={(text) => {
-              const numericValue = text.replace(/\D/g, '');
-              onChange(numericValue);
-            }}
-          />
-        )}
-      />
+          <View style={localStyles.inputContainer}>
+            <Controller
+              control={control}
+              name="descricao"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <AnimatedTextField
+                  label="Descrição (Opcional)"
+                  error={errors.descricao}
+                  keyboardType="default"
+                  onBlur={onBlur}
+                  value={value}
+                  onChangeText={onChange}
+                />
+              )}
+            />
+          </View>
+        </View>
 
-      <Controller
-        control={control}
-        name="descricao"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <AnimatedTextField
-            label="Descrição do Produto"
-            error={errors.descricao}
-            keyboardType="default"
-            onBlur={onBlur}
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
-      />
+        {/* CARTÃO 2: VALORES E ESTOQUE */}
+        <View style={localStyles.card}>
+          <View style={localStyles.cardHeader}>
+            <Feather name="tag" size={18} color="#1976d2" />
+            <Text style={localStyles.cardTitle}>VALORES E ESTOQUE</Text>
+          </View>
 
-      <ButtonWI
-        title="Adicionar Produto"
-        iconName="plus"
-        onPress={handleSubmit(onSubmit)}
-      />
-    </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View style={[localStyles.inputContainer, { flex: 1, marginRight: 8 }]}>
+              <Controller
+                control={control}
+                name="preco"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <AnimatedTextField
+                    label="Preço (R$)"
+                    error={errors.preco}
+                    keyboardType="numeric"
+                    onBlur={onBlur}
+                    value={formatCurrency(value)}
+                    onChangeText={(text) => {
+                      const numericValue = text.replace(/\D/g, '');
+                      onChange(numericValue);
+                    }}
+                  />
+                )}
+              />
+            </View>
+
+            <View style={[localStyles.inputContainer, { flex: 1, marginLeft: 8 }]}>
+              <Controller
+                control={control}
+                name="quantidade"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <AnimatedTextField
+                    label="Qtd. Inicial"
+                    error={errors.quantidade}
+                    keyboardType="numeric"
+                    onBlur={onBlur}
+                    value={value}
+                    onChangeText={(text) => {
+                      const numericValue = text.replace(/\D/g, '');
+                      onChange(numericValue);
+                    }}
+                  />
+                )}
+              />
+            </View>
+          </View>
+        </View>
+
+        <ButtonWI
+          title="Salvar Produto"
+          iconName="save"
+          onPress={handleSubmit(onSubmit)}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const localStyles = StyleSheet.create({
-  photo: {
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#1976d2' },
+  headerSubtitle: { fontSize: 16, color: '#777', marginTop: 4 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+  },
+  cardHeader: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
-    marginTop: 10,
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    paddingBottom: 8,
   },
-  img: {
-    width: 175,
-    height: 175,
-    borderRadius: 15,
-    marginTop: 5,
-    alignSelf: 'center',
+  cardTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginLeft: 8,
+    letterSpacing: 1,
   },
+  inputContainer: {
+    marginBottom: 12,
+  }
 });

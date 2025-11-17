@@ -64,7 +64,7 @@ export default function ProdutosScreen({ navigation }) {
       <FlatList
         data={clientes}
         renderItem={({ item }) => <ClienteItem item={item} navigation={navigation} />}
-        keyExtractor={(item) => item.id_produto.toString()}
+        keyExtractor={(item) => item.id_cliente.toString()}
         ListEmptyComponent={<Text style={localStyles.emptyText}>Nenhum cliente cadastrado.</Text>}
         contentContainerStyle={{ paddingBottom: 80 }} 
       />
@@ -73,6 +73,7 @@ export default function ProdutosScreen({ navigation }) {
         visible={visible}
         icon={{ name: 'add', color: 'white' }}
         style={styles.fab} 
+        color='#007bff'
         onPress={() => navigation.navigate('Novo Cliente')}
       />
     </View>
@@ -90,7 +91,8 @@ const localStyles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
     margin: 5,
-    borderRadius: 5,
+    borderRadius: 10,
+    marginHorizontal: 10
   },
   list: {
     flex: 1,
@@ -108,19 +110,10 @@ const localStyles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-  itemPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#27ae60',
-  },
   itemDescription: {
     fontSize: 14,
     color: '#666',
     marginBottom: 8,
-  },
-  itemStock: {
-    fontSize: 14,
-    color: '#888',
   },
   emptyText: {
     textAlign: 'center',

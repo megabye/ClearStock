@@ -8,7 +8,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "expo": "~54.0.23",
+    "expo": "~54.0.24",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",
     "react-native": "0.81.5",
@@ -25,9 +25,13 @@
     "@hookform/resolvers": "*",
     "react-native-screens": "~4.16.0",
     "@react-navigation/stack": "*",
+    "react-native-reanimated": "~4.1.1",
+    "@react-navigation/drawer": "*",
     "@react-navigation/native": "*",
     "react-native-vector-icons": "*",
+    "@react-native-picker/picker": "2.11.1",
     "react-native-gesture-handler": "~2.28.0",
+    "@react-navigation/bottom-tabs": "*",
     "@react-navigation/native-stack": "*",
     "react-native-safe-area-context": "~5.6.0"
   },

@@ -18,7 +18,7 @@ export default StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#007bff',
-    fontFamily: "Helvetica"
+    fontFamily: "Helvetica",
   },
   subtitle: {
     fontSize: 16,
@@ -33,12 +33,20 @@ export default StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
+  image: {
+    position: 'absolute', 
+    top: 0,               
+    left: 0,
+    right: 0,
+    height: 200,
+    width: '100%',
+  },
   bt: {
     width: buttonSize,
     height: buttonSize,
     backgroundColor: '#007bff',
     margin: 8,
-    borderRadius: 12,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -52,7 +60,7 @@ export default StyleSheet.create({
     height: '45',
     backgroundColor: '#007bff',
     margin: 15,
-    borderRadius: 8,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -81,8 +89,8 @@ export default StyleSheet.create({
   fab: {
     color: '#007bff',
     position: 'absolute',
-    bottom: 45,
-    right: 30,
+    bottom: 125,
+    right: 25,
   },
   icon: {
     alignItems: 'center',

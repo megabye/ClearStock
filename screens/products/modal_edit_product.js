@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, Alert, ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
-import { Divider } from '@rneui/themed';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { Feather } from '@expo/vector-icons';
 
-import styles from '../../components/css';
 import { ButtonWI } from '../../components/button_w_i';
 import { AnimatedTextField } from '../../components/field';
 import * as banco from '../../sql/banco';
 
-// Função auxiliar para formatar o valor do preço
 const formatCurrency = (value) => {
   if (!value) return '';
   const numericValue = String(value).replace(/\D/g, '');
@@ -27,10 +26,8 @@ export default function EditProduct({ navigation }) {
   const route = useRoute();
   const id_from_product = route.params?.productId;
 
-  const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Schema de validação
   const schema = yup.object({
     nome_produto: yup.string().required('O nome não pode ser vazio'),
     preco: yup.string().required('O preço é obrigatório'),
@@ -41,7 +38,6 @@ export default function EditProduct({ navigation }) {
     descricao: yup.string().nullable(),
   });
 
-  // Formulário com react-hook-form
   const {
     handleSubmit,
     control,
@@ -57,7 +53,6 @@ export default function EditProduct({ navigation }) {
     },
   });
 
-  // Carrega dados do produto quando a tela é focada
   useFocusEffect(
     React.useCallback(() => {
       loadData();
@@ -70,12 +65,9 @@ export default function EditProduct({ navigation }) {
       const allProduct = await banco.getOneProduct(id_from_product);
       if (allProduct.length > 0) {
         const p = allProduct[0];
-        setProduct(p);
-
-        // Preenche o formulário com os dados existentes
         reset({
           nome_produto: p.nome_produto,
-          preco: String(p.preco_atual * 100),
+          preco: String((p.preco_atual * 100).toFixed(0)), // Convertendo para centavos string
           quantidade: String(p.quantidade_estoque),
           descricao: p.descricao,
         });
@@ -89,10 +81,13 @@ export default function EditProduct({ navigation }) {
 
   const onSubmit = async (data) => {
     try {
-      const precoNumerico = parseFloat(data.preco) / 100;
+      // Garante limpeza de caracteres não numéricos antes de dividir
+      const precoLimpo = String(data.preco).replace(/\D/g, '');
+      const precoNumerico = parseFloat(precoLimpo) / 100;
+      
       const sucesso = await banco.updateProduct(
         data.nome_produto,
-        'er', // placeholder para imagem
+        'er', 
         precoNumerico.toFixed(2),
         parseInt(data.quantidade),
         data.descricao,
@@ -113,85 +108,149 @@ export default function EditProduct({ navigation }) {
 
   if (loading) {
     return (
-      <View style={[styles.container_home, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#000" />
-        <Text style={{ marginTop: 10 }}>Carregando produto...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#1976d2" />
+        <Text style={{ marginTop: 10, color: '#666' }}>Carregando produto...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container_home}>
-      <Text style={styles.appTitle}>Editar Produto</Text>
-      <Divider />
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f7fa' }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+        
+        <View style={{ marginBottom: 20 }}>
+          <Text style={localStyles.headerTitle}>Editar Produto</Text>
+          <Text style={localStyles.headerSubtitle}>Atualize as informações do item</Text>
+        </View>
 
-      <Controller
-        control={control}
-        name="nome_produto"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <AnimatedTextField
-            label="Nome do Produto"
-            error={errors.nome_produto}
-            keyboardType="default"
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
-          />
-        )}
-      />
+        {/* CARD 1 */}
+        <View style={localStyles.card}>
+          <View style={localStyles.cardHeader}>
+            <Feather name="edit-3" size={18} color="#1976d2" />
+            <Text style={localStyles.cardTitle}>DETALHES</Text>
+          </View>
 
-      <Controller
-        control={control}
-        name="preco"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <AnimatedTextField
-            label="Preço Atual"
-            error={errors.preco}
-            keyboardType="numeric"
-            onBlur={onBlur}
-            value={formatCurrency(value)}
-            onChangeText={(text) => {
-              const numericValue = text.replace(/\D/g, '');
-              onChange(numericValue);
-            }}
-          />
-        )}
-      />
+          <View style={localStyles.inputContainer}>
+            <Controller
+              control={control}
+              name="nome_produto"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <AnimatedTextField
+                  label="Nome do Produto"
+                  error={errors.nome_produto}
+                  keyboardType="default"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                />
+              )}
+            />
+          </View>
+          <View style={localStyles.inputContainer}>
+            <Controller
+              control={control}
+              name="descricao"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <AnimatedTextField
+                  label="Descrição"
+                  error={errors.descricao}
+                  keyboardType="default"
+                  onBlur={onBlur}
+                  value={value}
+                  onChangeText={onChange}
+                />
+              )}
+            />
+          </View>
+        </View>
 
-      <Controller
-        control={control}
-        name="quantidade"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <AnimatedTextField
-            label="Quantidade em Estoque"
-            error={errors.quantidade}
-            keyboardType="numeric"
-            onBlur={onBlur}
-            value={value}
-            onChangeText={(text) => {
-              const numericValue = text.replace(/\D/g, '');
-              onChange(numericValue);
-            }}
-          />
-        )}
-      />
+        {/* CARD 2 */}
+        <View style={localStyles.card}>
+          <View style={localStyles.cardHeader}>
+            <Feather name="layers" size={18} color="#1976d2" />
+            <Text style={localStyles.cardTitle}>ESTOQUE E PREÇO</Text>
+          </View>
 
-      <Controller
-        control={control}
-        name="descricao"
-        render={({ field: { onChange, onBlur, value } }) => (
-          <AnimatedTextField
-            label="Descrição do Produto"
-            error={errors.descricao}
-            keyboardType="default"
-            onBlur={onBlur}
-            value={value}
-            onChangeText={onChange}
-          />
-        )}
-      />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View style={[localStyles.inputContainer, { flex: 1, marginRight: 8 }]}>
+              <Controller
+                control={control}
+                name="preco"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <AnimatedTextField
+                    label="Preço (R$)"
+                    error={errors.preco}
+                    keyboardType="numeric"
+                    onBlur={onBlur}
+                    value={formatCurrency(value)}
+                    onChangeText={(text) => {
+                      const numericValue = text.replace(/\D/g, '');
+                      onChange(numericValue);
+                    }}
+                  />
+                )}
+              />
+            </View>
+            <View style={[localStyles.inputContainer, { flex: 1, marginLeft: 8 }]}>
+              <Controller
+                control={control}
+                name="quantidade"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <AnimatedTextField
+                    label="Quantidade"
+                    error={errors.quantidade}
+                    keyboardType="numeric"
+                    onBlur={onBlur}
+                    value={value}
+                    onChangeText={(text) => {
+                      const numericValue = text.replace(/\D/g, '');
+                      onChange(numericValue);
+                    }}
+                  />
+                )}
+              />
+            </View>
+          </View>
+        </View>
 
-      <ButtonWI title="Editar Produto" iconName="plus" onPress={handleSubmit(onSubmit)} />
-    </View>
+        <ButtonWI title="Salvar Alterações" iconName="check" onPress={handleSubmit(onSubmit)} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
+// Estilos iguais ao AddProduct
+const localStyles = StyleSheet.create({
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#1976d2' },
+  headerSubtitle: { fontSize: 16, color: '#777', marginTop: 4 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    paddingBottom: 8,
+  },
+  cardTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginLeft: 8,
+    letterSpacing: 1,
+  },
+  inputContainer: {
+    marginBottom: 12,
+  }
+});
